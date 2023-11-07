@@ -36,6 +36,12 @@ class  APanchoCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+	/** Look Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ChangeCameraAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	TArray<AActor*> Cameras;
 
 public:
 	// Sets default values for this character's properties
@@ -48,12 +54,23 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	void ChangeCamera(const FInputActionValue& Value);
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void Death();
+
+	UFUNCTION(BlueprintCallable)
+	void Respawn(FVector respawnPosition);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void DeathSystem();
 
 public:	
 	// Called every frame
@@ -64,5 +81,11 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+protected:
+	bool death = false;
 
+	float actualCamera = 0.0f;
+
+	UFUNCTION(BlueprintCallable)
+	void setCameras(TArray<AActor*> newCameras);
 };

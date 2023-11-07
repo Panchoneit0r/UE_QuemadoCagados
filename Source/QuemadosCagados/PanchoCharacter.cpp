@@ -58,7 +58,7 @@ void APanchoCharacter::Move(const FInputActionValue& Value)
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	if (Controller != nullptr)
+	if (Controller != nullptr && !death)
 	{
 		// find out which way is forward
 		const FRotator Rotation = Controller->GetControlRotation();
@@ -89,6 +89,26 @@ void APanchoCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void APanchoCharacter::ChangeCamera(const FInputActionValue& Value)
+{
+	if(death)
+	{
+		float inputValue = Value.Get<float>();
+		actualCamera+= inputValue;
+		if(actualCamera > 3)
+		{
+			actualCamera = 0;
+		}
+		else if(actualCamera < 0)
+		{
+			actualCamera = 3;
+		}
+		APlayerController* PlayerController = Cast<APlayerController>(Controller);
+
+		PlayerController->SetViewTargetWithBlend(Cameras[actualCamera]);
+	}
+}
+
 // Called when the game starts or when spawned
 void APanchoCharacter::BeginPlay()
 {
@@ -105,11 +125,30 @@ void APanchoCharacter::BeginPlay()
 	
 }
 
+void APanchoCharacter::Death()
+{
+	death = true;
+}
+
+void APanchoCharacter::Respawn(FVector respawnPosition)
+{
+	death = false;
+	APlayerController* PlayerController = Cast<APlayerController>(Controller);
+	
+	PlayerController->SetViewTargetWithBlend(this);
+	SetActorLocation(respawnPosition);
+}
+
 // Called every frame
 void APanchoCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void APanchoCharacter::setCameras(TArray<AActor*> newCameras)
+{
+	Cameras = newCameras;
 }
 
 // Called to bind functionality to input
@@ -127,6 +166,9 @@ void APanchoCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		//Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APanchoCharacter::Look);
+
+		//ChangeCamera
+		EnhancedInputComponent->BindAction(ChangeCameraAction, ETriggerEvent::Started, this, &APanchoCharacter::ChangeCamera);
 
 	}
 
