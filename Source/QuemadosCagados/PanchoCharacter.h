@@ -36,6 +36,12 @@ class  APanchoCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+	/** Look Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ChangeCameraAction;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation, meta = (AllowPrivateAccess = "true"))
+	TArray<AActor*> Cameras;
 
 public:
 	// Sets default values for this character's properties
@@ -48,12 +54,28 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	void Jumped();
+
+	void ChangeCamera(const FInputActionValue& Value);
 	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void Damage(float _damage);
+
+	UFUNCTION(BlueprintCallable)
+	void Death();
+
+	UFUNCTION(BlueprintCallable)
+	void Respawn(FVector respawnPosition);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void DeathSystem();
 
 public:	
 	// Called every frame
@@ -64,5 +86,24 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+protected:
+	bool death = false;
 
+	float actualCamera = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Health, meta = (AllowPrivateAccess = "true"))
+	float currentHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Health, meta = (AllowPrivateAccess = "true"))
+	float maxHealth;
+
+	FORCEINLINE float GetCurrentHealth() const{return  currentHealth;}
+
+	FORCEINLINE float GetMaxHealth() const{return  maxHealth;}
+
+	UFUNCTION(BlueprintCallable)
+	void setCurrentHealth(float newHealth);
+	
+	UFUNCTION(BlueprintCallable)
+	void setCameras(TArray<AActor*> newCameras);
 };
