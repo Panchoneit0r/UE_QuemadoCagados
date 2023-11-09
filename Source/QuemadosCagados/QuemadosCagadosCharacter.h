@@ -37,10 +37,14 @@ class AQuemadosCagadosCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
+	
+
 public:
 	AQuemadosCagadosCharacter();
 	
-
+/** Fire Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* LookFire;
 protected:
 
 	/** Called for movement input */
