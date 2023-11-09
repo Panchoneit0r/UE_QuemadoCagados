@@ -89,6 +89,14 @@ void APanchoCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void APanchoCharacter::Jumped()
+{
+	if(!death)
+	{
+		ACharacter::Jump();
+	}
+}
+
 void APanchoCharacter::ChangeCamera(const FInputActionValue& Value)
 {
 	if(death)
@@ -114,6 +122,7 @@ void APanchoCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	currentHealth = maxHealth;
 	//Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
@@ -125,6 +134,20 @@ void APanchoCharacter::BeginPlay()
 	
 }
 
+void APanchoCharacter::Damage(float _damage)
+{
+	if(!death)
+	{
+		currentHealth -= _damage;
+		setCurrentHealth(currentHealth);
+	
+		if(currentHealth <= 0.0f)
+		{
+			DeathSystem();
+		}
+	}
+}
+
 void APanchoCharacter::Death()
 {
 	death = true;
@@ -133,6 +156,7 @@ void APanchoCharacter::Death()
 void APanchoCharacter::Respawn(FVector respawnPosition)
 {
 	death = false;
+	setCurrentHealth(maxHealth);
 	APlayerController* PlayerController = Cast<APlayerController>(Controller);
 	
 	PlayerController->SetViewTargetWithBlend(this);
@@ -144,6 +168,11 @@ void APanchoCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void APanchoCharacter::setCurrentHealth(float newHealth)
+{
+	currentHealth = newHealth;
 }
 
 void APanchoCharacter::setCameras(TArray<AActor*> newCameras)
@@ -158,7 +187,7 @@ void APanchoCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent)) {
 		
 		//Jumping
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &APanchoCharacter::Jumped);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		//Moving

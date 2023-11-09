@@ -55,6 +55,8 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
+	void Jumped();
+
 	void ChangeCamera(const FInputActionValue& Value);
 	
 	// Called to bind functionality to input
@@ -62,6 +64,9 @@ protected:
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UFUNCTION(BlueprintCallable)
+	void Damage(float _damage);
 
 	UFUNCTION(BlueprintCallable)
 	void Death();
@@ -86,6 +91,19 @@ protected:
 
 	float actualCamera = 0.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Health, meta = (AllowPrivateAccess = "true"))
+	float currentHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Health, meta = (AllowPrivateAccess = "true"))
+	float maxHealth;
+
+	FORCEINLINE float GetCurrentHealth() const{return  currentHealth;}
+
+	FORCEINLINE float GetMaxHealth() const{return  maxHealth;}
+
+	UFUNCTION(BlueprintCallable)
+	void setCurrentHealth(float newHealth);
+	
 	UFUNCTION(BlueprintCallable)
 	void setCameras(TArray<AActor*> newCameras);
 };
