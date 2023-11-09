@@ -8,8 +8,10 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "JimmyBall.h"
 
 // Sets default values
 APanchoCharacter::APanchoCharacter()
@@ -134,18 +136,24 @@ void APanchoCharacter::BeginPlay()
 	
 }
 
-void APanchoCharacter::Damage(float _damage)
+void APanchoCharacter::Damaged(float _damage)
 {
 	if(!death)
 	{
 		currentHealth -= _damage;
 		setCurrentHealth(currentHealth);
 	
-		if(currentHealth <= 0.0f)
+		/*if(currentHealth <= 0.0f)
 		{
 			DeathSystem();
 		}
+		*/
 	}
+}
+
+void APanchoCharacter::ChangePowerBall(TSubclassOf<AActor> newPowerBall)
+{
+	PowerBall = newPowerBall;
 }
 
 void APanchoCharacter::Death()
@@ -158,7 +166,6 @@ void APanchoCharacter::Respawn(FVector respawnPosition)
 	death = false;
 	setCurrentHealth(maxHealth);
 	APlayerController* PlayerController = Cast<APlayerController>(Controller);
-	
 	PlayerController->SetViewTargetWithBlend(this);
 	SetActorLocation(respawnPosition);
 }
@@ -173,11 +180,100 @@ void APanchoCharacter::Tick(float DeltaTime)
 void APanchoCharacter::setCurrentHealth(float newHealth)
 {
 	currentHealth = newHealth;
+	OnHealthUpdate();
 }
 
 void APanchoCharacter::setCameras(TArray<AActor*> newCameras)
 {
 	Cameras = newCameras;
+}
+
+void APanchoCharacter::OnHealthUpdate()
+{
+	//Client-specific functionality
+	if (IsLocallyControlled())
+	{
+		FString healthMessage = FString::Printf(TEXT("You now have %f health remaining."), currentHealth);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, healthMessage);
+
+		if (currentHealth <= 0)
+		{
+			FString deathMessage = FString::Printf(TEXT("You have been killed."));
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, deathMessage);
+		}
+	}
+
+	//Server-specific functionality
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		FString healthMessage = FString::Printf(TEXT("%s now has %f health remaining."), *GetFName().ToString(), currentHealth);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, healthMessage);
+	}
+
+	
+	if (currentHealth <= 0)
+	{
+		DeathSystem();
+	}
+}
+
+void APanchoCharacter::StartFire()
+{
+	if (!bIsFiringWeapon && !death)
+	{
+		bIsFiringWeapon = true;
+		UWorld* World = GetWorld();
+		World->GetTimerManager().SetTimer(FiringTimer, this, &APanchoCharacter::StopFire, FireRate, false);
+		HandleFire();
+	}
+	// Handle firing projectiles
+	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AJimmyCharacter::StartFire);
+	//no se que haga esto
+}
+
+void APanchoCharacter::StopFire()
+{
+	bIsFiringWeapon = false;
+}
+
+void APanchoCharacter::HandleFire_Implementation()
+{
+	FVector spawnLocation = GetActorLocation() + ( GetActorRotation().Vector()  * 100.0f ) + (GetActorUpVector() * 50.0f);
+	FRotator spawnRotation = GetActorRotation();
+
+	FActorSpawnParameters spawnParameters;
+	spawnParameters.Instigator = GetInstigator();
+	spawnParameters.Owner = this;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance != nullptr)
+	{
+		AnimInstance->Montage_Play(AttackAnim, 2.0f);
+	}
+	
+	if(PowerBall)
+	{
+		AActor* projectile = GetWorld()->SpawnActor<AActor>(PowerBall, spawnLocation, spawnRotation, spawnParameters);
+		PowerBall = nullptr;
+	}
+	else
+	{
+		AActor* projectile = GetWorld()->SpawnActor<AActor>(ProjectileClass, spawnLocation, spawnRotation, spawnParameters);
+	}
+	
+}
+
+void APanchoCharacter::OnRep_CurrentHealth()
+{	
+	OnHealthUpdate();
+}
+
+void APanchoCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//Replicate current health.
+	DOREPLIFETIME(APanchoCharacter, currentHealth);
 }
 
 // Called to bind functionality to input
@@ -199,6 +295,7 @@ void APanchoCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		//ChangeCamera
 		EnhancedInputComponent->BindAction(ChangeCameraAction, ETriggerEvent::Started, this, &APanchoCharacter::ChangeCamera);
 
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &APanchoCharacter::StartFire);
 	}
 
 }

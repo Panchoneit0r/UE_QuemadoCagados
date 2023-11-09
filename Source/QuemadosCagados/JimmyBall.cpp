@@ -2,6 +2,8 @@
 
 
 #include "JimmyBall.h"
+
+#include "PanchoCharacter.h"
 #include "Components/SphereComponent.h"
  #include "Components/StaticMeshComponent.h"
  #include "GameFramework/ProjectileMovementComponent.h"
@@ -27,11 +29,12 @@ AJimmyBall::AJimmyBall()
 	SphereComponent->SetCollisionProfileName(TEXT("BlockAllDynamic"));
 	RootComponent = SphereComponent;
 
-	//Registering the Projectile Impact function on a Hit event.
+	/*Registering the Projectile Impact function on a Hit event.
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		SphereComponent->OnComponentHit.AddDynamic(this, &AJimmyBall::OnProjectileImpact);
 	}
+	*/
 	
 	//Definition for the Mesh that will serve as your visual representation.
 //	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMesh(TEXT("/Game/StarterContent/Shapes/Shape_Sphere.Shape_Sphere"));
@@ -81,18 +84,24 @@ void AJimmyBall::Tick(float DeltaTime)
 
 }
 
+void AJimmyBall::NotifyActorBeginOverlap(AActor* OtherActor)
+{
+	Super::NotifyActorBeginOverlap(OtherActor);
+
+	APanchoCharacter* character = Cast<APanchoCharacter>(OtherActor);
+
+	if(OtherActor)
+	{
+		character->Damaged(Damage);
+		Destroy();
+	}
+}
+
 void AJimmyBall::Destroyed()
 {
 	//FVector spawnLocation = GetActorLocation();
 	//UGameplayStatics::SpawnEmitterAtLocation(this, ExplosionEffect, spawnLocation, FRotator::ZeroRotator, true, EPSCPoolMethod::AutoRelease);
 }
 
-void AJimmyBall::OnProjectileImpact(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-	if (OtherActor)
-	{
-		UGameplayStatics::ApplyPointDamage(OtherActor, Damage, NormalImpulse, Hit, GetInstigator()->Controller, this, DamageType);
-	}
-	Destroy();
-}
+
 
