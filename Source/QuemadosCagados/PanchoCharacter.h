@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "PanchoCharacter.generated.h"
 
 UCLASS(config=Game)
@@ -95,6 +96,8 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
+	IOnlineSessionPtr OnlineSessionInterface;
+
 protected:
 	bool death = false;
 
@@ -155,5 +158,24 @@ protected:
 	
 	/** Property replication */
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+protected:
+	UFUNCTION(BlueprintCallable)
+	void CreateGameSession();
+
+	UFUNCTION(BlueprintCallable)
+	void JoinGameSession();
+
+	//Callbacks
+	void OnCreateSessionComplete(FName SessionName, bool bWasSuccess);
+	void OnFindSessionComplete(bool bWasSuccessful);
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+
+private:
+	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
+	FOnJoinSessionCompleteDelegate JoinSessionCompleteDelegate;
+
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 
 };
