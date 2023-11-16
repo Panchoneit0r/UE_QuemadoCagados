@@ -14,6 +14,7 @@
 #include "JimmyBall.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "OnlineSubsystem.h"
 
 // Sets default values
 APanchoCharacter::APanchoCharacter():
@@ -186,8 +187,13 @@ void APanchoCharacter::Respawn(FVector respawnPosition)
 {
 	death = false;
 	setCurrentHealth(maxHealth);
-	APlayerController* PlayerController = Cast<APlayerController>(Controller);
-	PlayerController->SetViewTargetWithBlend(this);
+	
+	if (IsLocallyControlled())
+	{
+		APlayerController* PlayerController = Cast<APlayerController>(Controller);
+		PlayerController->SetViewTargetWithBlend(this);
+	}
+	
 	SetActorLocation(respawnPosition);
 }
 
@@ -246,6 +252,7 @@ void APanchoCharacter::StartFire()
 		UWorld* World = GetWorld();
 		World->GetTimerManager().SetTimer(FiringTimer, this, &APanchoCharacter::StopFire, FireRate, false);
 		HandleFire();
+		FireAnimationClient();
 	}
 	// Handle firing projectiles
 	//PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AJimmyCharacter::StartFire);
@@ -255,6 +262,15 @@ void APanchoCharacter::StartFire()
 void APanchoCharacter::StopFire()
 {
 	bIsFiringWeapon = false;
+}
+
+void APanchoCharacter::FireAnimationClient_Implementation()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance != nullptr)
+	{
+		AnimInstance->Montage_Play(AttackAnim, 2.0f);
+	}
 }
 
 void APanchoCharacter::HandleFire_Implementation()
@@ -343,6 +359,8 @@ void APanchoCharacter::JoinGameSession()
 	SessionSearch->MaxSearchResults = 10000;
 	SessionSearch->bIsLanQuery = false;
 	//SessionSearch->QuerySettings.Set(Presence, true, EOnlineComparisonOp::Equals);
+
+	
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
@@ -366,7 +384,7 @@ void APanchoCharacter::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 		UWorld* World = GetWorld();
 		if(World)
 		{
-			World->ServerTravel(FString("/Game/ThirdPerson/Maps/Lobby?listen"));
+			World->ServerTravel(MapRoute);
 		}
 		else
 		{
@@ -419,7 +437,7 @@ void APanchoCharacter::OnFindSessionComplete(bool bWasSuccessful)
 			);
 		}
 
-		if(MatchType == FString("FreeForAll"))
+		if(MatchType == FString("TeamMach"))
 		{
 			if (GEngine)
 			{
@@ -467,6 +485,11 @@ void APanchoCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 			PlayerController->ClientTravel(Address, TRAVEL_Absolute);
 		}
 	}
+}
+
+void APanchoCharacter::setMapRoute(FString NewMapRoute)
+{
+	MapRoute = NewMapRoute;
 }
 
 // Called to bind functionality to input

@@ -148,6 +148,9 @@ protected:
 	/** Server function for spawning projectiles.*/
 	UFUNCTION(Server, Reliable)
 	void HandleFire();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void FireAnimationClient();
 
 	/** A timer handle used for providing the fire rate delay in-between spawns.*/
 	FTimerHandle FiringTimer;
@@ -170,6 +173,12 @@ protected:
 	void OnCreateSessionComplete(FName SessionName, bool bWasSuccess);
 	void OnFindSessionComplete(bool bWasSuccessful);
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = online, meta = (AllowPrivateAccess = "true"))
+	FString MapRoute;
+
+	UFUNCTION(BlueprintCallable)
+	void setMapRoute(FString NewMapRoute);
 
 private:
 	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
