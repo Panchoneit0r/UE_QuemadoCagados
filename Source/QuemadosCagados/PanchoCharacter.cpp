@@ -14,6 +14,7 @@
 #include "JimmyBall.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "OnlineSubsystem.h"
 
 // Sets default values
 APanchoCharacter::APanchoCharacter():
@@ -358,6 +359,8 @@ void APanchoCharacter::JoinGameSession()
 	SessionSearch->MaxSearchResults = 10000;
 	SessionSearch->bIsLanQuery = false;
 	//SessionSearch->QuerySettings.Set(Presence, true, EOnlineComparisonOp::Equals);
+
+	
 	SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
 
 	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
@@ -434,7 +437,7 @@ void APanchoCharacter::OnFindSessionComplete(bool bWasSuccessful)
 			);
 		}
 
-		if(MatchType == FString("FreeForAll"))
+		if(MatchType == FString("TeamMach"))
 		{
 			if (GEngine)
 			{
