@@ -137,7 +137,7 @@ void APanchoCharacter::ChangeCamera(const FInputActionValue& Value)
 		}
 		APlayerController* PlayerController = Cast<APlayerController>(Controller);
 
-		PlayerController->SetViewTargetWithBlend(Cameras[actualCamera]);
+		PlayerController->SetViewTargetWithBlend(Cameras[actualCamera], 0.3f);
 	}
 }
 
